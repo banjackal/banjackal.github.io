@@ -1,1 +1,0 @@
-# banjackal.github.io
