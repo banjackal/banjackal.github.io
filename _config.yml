@@ -18,10 +18,10 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Banjos and Jackals, a Tech Blog
-email: dingo@banjackal.com
+title: Another Tech Blog, but with Banjos
+email: nick@banjackal.com
 description: >- # this means to ignore newlines until "baseurl:"
-  A blog of all things DevOps, Cloud, and Software Development 
+  A blog of all things DevOps, Cloud, and Software Development
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "blog.banjackal.com" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  banjackal
@@ -33,6 +33,12 @@ plugins:
   - jekyll-paginate
   - jekyll-seo-tag
   - jekyll-sitemap
+
+permalink: /:title/
+markdown: kramdown
+paginate: 5
+paginate_path: "/:num/"
+date_format: "%b %-d, &Y"
 
 # Exclude from processing.
 # The following items will not be processed, by default.
