@@ -1,0 +1,5 @@
+/home/nick/code/banjackal.github.io/c-sharp/obj/Debug/net6.0/c-sharp.csproj.AssemblyReference.cache
+/home/nick/code/banjackal.github.io/c-sharp/obj/Debug/net6.0/c-sharp.GeneratedMSBuildEditorConfig.editorconfig
+/home/nick/code/banjackal.github.io/c-sharp/obj/Debug/net6.0/c-sharp.AssemblyInfoInputs.cache
+/home/nick/code/banjackal.github.io/c-sharp/obj/Debug/net6.0/c-sharp.AssemblyInfo.cs
+/home/nick/code/banjackal.github.io/c-sharp/obj/Debug/net6.0/c-sharp.csproj.CoreCompileInputs.cache
