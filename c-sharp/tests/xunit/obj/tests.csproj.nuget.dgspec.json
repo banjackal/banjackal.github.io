@@ -1,0 +1,148 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/nick/code/banjackal.github.io/c-sharp/tests/xunit/tests.csproj": {}
+  },
+  "projects": {
+    "/home/nick/code/banjackal.github.io/c-sharp/code/c-sharp.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/nick/code/banjackal.github.io/c-sharp/code/c-sharp.csproj",
+        "projectName": "c-sharp",
+        "projectPath": "/home/nick/code/banjackal.github.io/c-sharp/code/c-sharp.csproj",
+        "packagesPath": "/home/nick/.nuget/packages/",
+        "outputPath": "/home/nick/code/banjackal.github.io/c-sharp/code/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/nick/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/nick/.dotnet/sdk/7.0.202/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/nick/code/banjackal.github.io/c-sharp/tests/xunit/tests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/nick/code/banjackal.github.io/c-sharp/tests/xunit/tests.csproj",
+        "projectName": "tests",
+        "projectPath": "/home/nick/code/banjackal.github.io/c-sharp/tests/xunit/tests.csproj",
+        "packagesPath": "/home/nick/.nuget/packages/",
+        "outputPath": "/home/nick/code/banjackal.github.io/c-sharp/tests/xunit/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/nick/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {
+              "/home/nick/code/banjackal.github.io/c-sharp/code/c-sharp.csproj": {
+                "projectPath": "/home/nick/code/banjackal.github.io/c-sharp/code/c-sharp.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "dependencies": {
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[17.3.2, )"
+            },
+            "Moq": {
+              "target": "Package",
+              "version": "[4.18.4, )"
+            },
+            "Moq.Automock": {
+              "target": "Package",
+              "version": "[3.5.0, )"
+            },
+            "coverlet.collector": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[3.1.2, )"
+            },
+            "xunit": {
+              "target": "Package",
+              "version": "[2.4.2, )"
+            },
+            "xunit.runner.visualstudio": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.4.5, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/nick/.dotnet/sdk/7.0.202/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
