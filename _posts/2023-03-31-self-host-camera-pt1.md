@@ -19,4 +19,6 @@ ___NOTE:___ For initial testing, I specifically set the camera to "monitor" mode
 
 After getting a camera up and running, by old 4 core intel i5-2500k was steadily running at about 15% (an overall increase of about 12% from it's standard load)
 
+Adding a second camera (an old Google Pixel 6), CPU usage is around 20%
+
 ___NOTE:___ I'm sharing this hardware with my media server, so in order to expand the system, I'll probably need to get another dedicated box to host ZoneMinder, or at least transfer my media server to a cloud solution. I'm anticipating that with 8-12 cameras, I may need more CPU as well
