@@ -24,7 +24,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "dynamodb:BatchWriteItem"
     ]
     resources = [
-      "arn:aws:dynamodb:::*"
+      module.dynamodb_table.dynamodb_table_arn
     ]
   }
 }

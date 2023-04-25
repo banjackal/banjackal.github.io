@@ -7,6 +7,8 @@ from PIL import Image
 import PIL.Image
             
 s3_client = boto3.client('s3')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('image_metadata')
             
 def resize_image(image_path, resized_path):
   with Image.open(image_path) as image:
@@ -28,3 +30,10 @@ def lambda_handler(event, context):
     upload_key = 'resized-python/{}'.format('/'.join(key.split('/')[1:]))
     print(f'uploading to {upload_key}')
     s3_client.upload_file(upload_path, '{}'.format(bucket), upload_key)
+
+    # Write to DynamoDB
+    table.put_item(Item={
+        'id': tmpkey,
+        'fullsize-path': tmpkey,
+        'thumbnail-path': upload_key,
+        })
