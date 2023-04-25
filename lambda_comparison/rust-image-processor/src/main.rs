@@ -5,6 +5,9 @@ use image::ImageError;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use std::io::Cursor;
+use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_dynamodb as dynamodb;
+    
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -58,19 +61,41 @@ async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         let _uploaded = bucket.put_object(&target, &bytes).await?;
         println!("Uploaded resized image");
 
-        Ok(())
+        put_on_dynamo(&object_key, &target).await?;
 
+        Ok(())
 }
 
- fn get_route_without_root(path: &str) -> &str {
+async fn put_on_dynamo(original_path: &str, thumbnail_path: &str) -> Result<(), Error> {
+	let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
+	let config = aws_config::from_env().region(region_provider).load().await;
+	let client = dynamodb::Client::new(&config);
+
+	let request = client
+		.put_item()
+        .table_name("image_metadata")
+        .item("id", dynamodb::types::AttributeValue::S(String::from(original_path)))
+        .item("fullsize-path", dynamodb::types::AttributeValue::S(String::from(original_path)))
+        .item("thumbnail-path", dynamodb::types::AttributeValue::S(String::from(thumbnail_path)));
+
+    let response = request.send().await?;
+
+    println!("Wrote item {:?}", response.attributes().unwrap());
+
+    Ok(())
+}
+
+fn get_route_without_root(path: &str) -> &str {
  	let bytes = path.as_bytes();
  	for (i, &item) in bytes.iter().enumerate() {
  		if item == b'/' {
  			return &path[i..];
  		}
  	}
- 	&path
- }
+    &path
+}
+
+
 fn resize_image(img: &image::DynamicImage, ratio: &f32) -> Result<image::DynamicImage, ImageError> {
     let old_w = img.width() as f32;
     let old_h = img.height() as f32;

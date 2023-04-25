@@ -16,6 +16,7 @@ edition = "2021"
 
 [dependencies]
 aws-config = "0.55.1"
+aws-sdk-dynamodb = "0.26.0"
 aws-sdk-s3 = "0.26.0"
 aws_lambda_events = { version = "0.7.3", default-features = false, features = ["s3"] }
 image = "0.24.6"

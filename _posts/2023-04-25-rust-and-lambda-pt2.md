@@ -293,6 +293,43 @@ Now, let's jump into our Rust project update our Lambda function code
 ```shell
 $ cd rust-image-processor
 ```
+
+First, update the `Cargo.toml` to include all our necessary crates
+##### __`Cargo.toml`__
+```
+[package]
+name = "rust-image-processor"
+version = "0.1.0"
+edition = "2021"
+
+# Starting in Rust 1.62 you can use `cargo add` to add dependencies 
+# to your project.
+#
+# If you're using an older Rust version,
+# download cargo-edit(https://github.com/killercup/cargo-edit#installation) 
+# to install the `add` subcommand.
+#
+# Running `cargo add DEPENDENCY_NAME` will
+# add the latest version of a dependency to the list,
+# and it will keep the alphabetic ordering for you.
+
+[dependencies]
+aws-config = "0.55.1"
+aws-sdk-dynamodb = "0.26.0"
+aws-sdk-s3 = "0.26.0"
+aws_lambda_events = { version = "0.7.3", default-features = false, features = ["s3"] }
+image = "0.24.6"
+
+lambda_runtime = "0.8.0"
+openssl = { version = "0.10.51", features = ["vendored"] }
+rust-s3 = "0.33.0"
+tokio = { version = "1", features = ["macros"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+urlencoding = "2.1.2"
+```
+
+
 ##### __`src/main.rs`__
 ```rust
 use aws_lambda_events::event::s3::S3Event;

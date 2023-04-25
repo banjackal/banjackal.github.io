@@ -33,7 +33,7 @@ def lambda_handler(event, context):
 
     # Write to DynamoDB
     table.put_item(Item={
-        'id': tmpkey,
-        'fullsize-path': tmpkey,
+        'id': key,
+        'fullsize-path': key,
         'thumbnail-path': upload_key,
         })
