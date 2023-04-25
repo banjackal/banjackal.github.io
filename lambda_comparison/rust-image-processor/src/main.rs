@@ -80,7 +80,7 @@ async fn put_on_dynamo(original_path: &str, thumbnail_path: &str) -> Result<(), 
 
     let response = request.send().await?;
 
-    println!("Wrote item {:?}", response.attributes().unwrap());
+    println!("Wrote item {:?}", response);
 
     Ok(())
 }
