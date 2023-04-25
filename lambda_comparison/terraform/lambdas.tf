@@ -65,7 +65,7 @@ module "rust_lambda_function" {
   runtime                = "provided.al2"
   architectures          = ["arm64"]
   create_package         = false
-  local_existing_package = "../rust/target/lambda/rust-image-processor/bootstrap.zip"
+  local_existing_package = "../rust-image-processor/target/lambda/rust-image-processor/bootstrap.zip"
 
   allowed_triggers = {
     S3Events = {
