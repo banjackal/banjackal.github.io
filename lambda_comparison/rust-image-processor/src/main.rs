@@ -37,7 +37,6 @@ async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         
         //Get object
         let object = bucket.get_object(&object_key).await?;
-        // let object = image::load_from_memory(object.bytes()).unwrap();
         let reader = image::io::Reader::new(Cursor::new(object.bytes())).with_guessed_format()?;
 
         //gets the source format so we can use it in our write
@@ -102,7 +101,7 @@ fn resize_image(img: &image::DynamicImage, ratio: &f32) -> Result<image::Dynamic
     let new_w = (old_w * ratio).floor();
     let new_h = (old_h * ratio).floor();
 
-    let scaled = img.resize(new_w as u32, new_h as u32, image::imageops::FilterType::Lanczos3);
+    let scaled = img.resize(new_w as u32, new_h as u32, image::imageops::FilterType::Nearest);
 
     Ok(scaled)
 }
