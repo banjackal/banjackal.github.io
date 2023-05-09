@@ -143,7 +143,7 @@ Let's try uploading a larger screenshot to see what happens. I'm going to use a 
 | 4242.12 | 4296.0 | 128 | 60 |
 
 Now we're getting somewhere! Let's try again with a much larger image, a 2.1MB cat
-!(../images/rust_python_lambda_3/cat.jpeg)
+![](../images/rust_python_lambda_3/cat.jpeg)
 
 This one actually caused the Rust lambda to timeout (at 5 seconds) and the Python lambda ran in about 4.5. I'm starting to think that perhaps the Rust image processing isn't as efficient as it could be. I'll investigate and see if I can't identify some efficiency improvements in a future part.
 

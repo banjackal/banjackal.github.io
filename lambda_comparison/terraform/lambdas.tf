@@ -51,7 +51,7 @@ module "python_lambda_function" {
   policy_json        = data.aws_iam_policy_document.lambda_policy.json
 
   memory_size = 128
-  timeout     = 5
+  timeout     = 10
 }
 
 module "rust_lambda_function" {
@@ -78,7 +78,7 @@ module "rust_lambda_function" {
   policy_json        = data.aws_iam_policy_document.lambda_policy.json
 
   memory_size = 128
-  timeout     = 5
+  timeout     = 10
 }
 
 

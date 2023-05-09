@@ -4,7 +4,6 @@ use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use image::ImageError;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
-use std::io::Cursor;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb as dynamodb;
     
@@ -36,12 +35,17 @@ async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         let bucket = Bucket::new(&bucket_name, region, credentials).expect("Unable to connect to bucket");
         
         //Get object
-        let object = bucket.get_object(&object_key).await?;
-        let reader = image::io::Reader::new(Cursor::new(object.bytes())).with_guessed_format()?;
+        let mut object_data_stream = bucket.get_object_stream(&object_key).await?;
 
-        //gets the source format so we can use it in our write
-        let object_format = reader.format().unwrap();
-        let object = reader.decode()?;
+		let original_filename = format!("/tmp/{}", &object_key);
+
+		let mut async_output_file = tokio::fs::File::create(&original_filename).await.expect("Unable to create file");
+
+		while let Some(chunk) = object_data_stream.bytes().next().await {
+			async_output_file.write_all(&chunk).await?;
+		}	
+
+		let object = image::io::Reader::open(&original_filename)?.decode()?;
 
         //Scale image
 		let scale_ratio = 0.5;
@@ -52,13 +56,14 @@ async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         let target = format!("resized-rust{}", removed_root_folder);
 		println!("Uploading resized image to {}", target);
 
-        //write to bytes
-        let mut bytes: Vec<u8> = Vec::new();
-		resized.write_to(&mut Cursor::new(&mut bytes), image::ImageOutputFormat::from(object_format))?;
+        //write to fs
+		let tmp_target = format!("/tmp/{}", &target);
+		resized.save(&tmp_target)?;
 
         // Upload new image to s3
-        let _uploaded = bucket.put_object(&target, &bytes).await?;
-        println!("Uploaded resized image");
+        let mut file = tokio::fs::File::open(&tmp_target).await?;
+        let status_code = bucket.put_object_stream(&mut file, &target).await?;
+        println!("Uploaded resized image with status code {}", &status_code);
 
         put_on_dynamo(&object_key, &target).await?;
 
