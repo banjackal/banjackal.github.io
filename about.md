@@ -22,3 +22,7 @@ I hold multiple AWS Certifications, and I work to develop solutions in AWS every
 <div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="be23d599-5e2d-4695-a821-99491ae58f53" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
 
 <div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="2e262641-6040-4447-bd98-43f9729387a9" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="902646f5-137e-40bb-8f1e-86da3e17144a" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="6e651ccb-9712-46cd-8332-068179836ef4" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>

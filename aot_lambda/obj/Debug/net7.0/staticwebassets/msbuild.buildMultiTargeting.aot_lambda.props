@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/aot_lambda.props" />
+</Project>

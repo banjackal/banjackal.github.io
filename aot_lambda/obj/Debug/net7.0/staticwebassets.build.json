@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "d3t9aGdXQt4gHD0/pwcwBFHpCh38OWAs+SDiI8c9SCU=",
+  "Source": "aot_lambda",
+  "BasePath": "_content/aot_lambda",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
