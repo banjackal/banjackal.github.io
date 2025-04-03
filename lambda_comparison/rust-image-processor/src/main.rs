@@ -1,9 +1,11 @@
 use aws_lambda_events::event::s3::S3Event;
 use aws_lambda_events::s3::S3EventRecord;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
-use image::ImageError;
+use std::io::Cursor;
+use image::{imageops, ImageError, ImageFormat, ImageOutputFormat};
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
+use tracing::{debug, error, info, instrument};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb as dynamodb;
     
@@ -13,14 +15,18 @@ use aws_sdk_dynamodb as dynamodb;
 /// There are some code example in the following URLs:
 /// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
 /// - https://github.com/aws-samples/serverless-rust-demo/
+
+#[instrument]
 async fn function_handler(event: LambdaEvent<S3Event>) -> Result<(), Error> {
-    // Extract some useful information from the request
-    for record in event.payload.records {
-        let _ = process_record(record).await;
+	for record in event.payload.records {
+        if let Err(err) = process_record(record).await {
+            error!("Error processing record: {:?}", err);
+        }
     }
     Ok(())
 }
 
+#[instrument]
 async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         //extract fields from event record
         let bucket_name = record.s3.bucket.name.unwrap();
@@ -35,35 +41,30 @@ async fn process_record(record: S3EventRecord) -> Result<(), Error> {
         let bucket = Bucket::new(&bucket_name, region, credentials).expect("Unable to connect to bucket");
         
         //Get object
-        let mut object_data_stream = bucket.get_object_stream(&object_key).await?;
+		let object = bucket.get_object(&object_key).await?;
+		let mut reader = image::io::Reader::new(Cursor::new(object.bytes()))
+			.with_guessed_format()?;
 
-		let original_filename = format!("/tmp/{}", &object_key);
-
-		let mut async_output_file = tokio::fs::File::create(&original_filename).await.expect("Unable to create file");
-
-		while let Some(chunk) = object_data_stream.bytes().next().await {
-			async_output_file.write_all(&chunk).await?;
-		}	
-
-		let object = image::io::Reader::open(&original_filename)?.decode()?;
+		let mut img = reader.decode()?;
 
         //Scale image
 		let scale_ratio = 0.5;
-        let resized = resize_image(&object, &scale_ratio).unwrap();
+        resize_image(&mut img, &scale_ratio);
 
         // Create new S3 key name from source without the prefix
         let removed_root_folder = get_route_without_root(&object_key);
         let target = format!("resized-rust{}", removed_root_folder);
 		println!("Uploading resized image to {}", target);
 
-        //write to fs
-		let tmp_target = format!("/tmp/{}", &target);
-		resized.save(&tmp_target)?;
+        //write to bytes 
 
-        // Upload new image to s3
-        let mut file = tokio::fs::File::open(&tmp_target).await?;
-        let status_code = bucket.put_object_stream(&mut file, &target).await?;
-        println!("Uploaded resized image with status code {}", &status_code);
+        // Write the resized image to bytes
+		let mut bytes: Vec<u8> = Vec::new();
+		img.write_to(&mut Cursor::new(&mut bytes), ImageOutputFormat::Jpeg(95))?;
+
+		// Upload the resized image to S3
+		bucket.put_object(&target, &bytes).await?;
+		info!("Uploaded resized image");
 
         put_on_dynamo(&object_key, &target).await?;
 
@@ -100,15 +101,13 @@ fn get_route_without_root(path: &str) -> &str {
 }
 
 
-fn resize_image(img: &image::DynamicImage, ratio: &f32) -> Result<image::DynamicImage, ImageError> {
+fn resize_image(img: &mut image::DynamicImage, ratio: &f32) {
     let old_w = img.width() as f32;
     let old_h = img.height() as f32;
     let new_w = (old_w * ratio).floor();
     let new_h = (old_h * ratio).floor();
 
-    let scaled = img.resize(new_w as u32, new_h as u32, image::imageops::FilterType::Nearest);
-
-    Ok(scaled)
+    *img = img.resize(new_w as u32, new_h as u32, image::imageops::FilterType::Nearest);
 }
 
 #[tokio::main]

@@ -1,0 +1,8 @@
+{
+    "scripts": {
+        "run": "tsc index.ts && node index.js"
+    },
+  "dependencies": {
+    "typescript": "^5.3.3"
+  }
+}
