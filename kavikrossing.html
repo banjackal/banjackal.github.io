@@ -1,0 +1,920 @@
+---
+permalink: /rocket2
+layout: page
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavi Krossing - Space Adventure</title>
+    <style>
+        #gameContainer * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #1a0a2e 0%, #2d1b4e 100%);
+            border: 3px solid #ff69b4;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
+            margin: 20px auto;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .stars {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            pointer-events: all;
+        }
+
+        #gameContainer h1 {
+            font-size: 42px;
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(255, 100, 100, 0.8);
+        }
+
+        #gameContainer .subtitle {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        #gameContainer button {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            pointer-events: all;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #gameContainer button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #gameContainer button:active {
+            transform: translateY(0);
+        }
+
+        #finalScore {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        #highScore {
+            font-size: 18px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+
+        .instruction {
+            font-size: 16px;
+            color: #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div id="score">0</div>
+            
+            <div id="startScreen">
+                <h1>🎮 KAVI KROSSING</h1>
+                <p class="subtitle">Navigate through the asteroid field!</p>
+                
+                <div style="margin: 20px 0; width: 300px;">
+                    <label for="difficultySlider" style="color: #fff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Difficulty: <span id="difficultyLabel">Medium</span>
+                    </label>
+                    <input type="range" id="difficultySlider" min="0" max="3" value="1" 
+                           style="width: 100%; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; color: #aaa; font-size: 12px; margin-top: 5px;">
+                        <span>Easy</span>
+                        <span>Medium</span>
+                        <span>Hard</span>
+                        <span>Impossible</span>
+                    </div>
+                </div>
+                
+                <button id="startBtn">START GAME</button>
+                <p class="instruction">Tap, click, or press SPACE to fly</p>
+            </div>
+            
+            <div id="gameOverScreen" style="display: none;">
+                <h1>GAME OVER</h1>
+                <p id="finalScore">Score: 0</p>
+                <p id="highScore">Best: 0</p>
+                
+                <div style="margin: 20px 0; width: 300px;">
+                    <label for="difficultySlider2" style="color: #fff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Difficulty: <span id="difficultyLabel2">Medium</span>
+                    </label>
+                    <input type="range" id="difficultySlider2" min="0" max="3" value="1" 
+                           style="width: 100%; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; color: #aaa; font-size: 12px; margin-top: 5px;">
+                        <span>Easy</span>
+                        <span>Medium</span>
+                        <span>Hard</span>
+                        <span>Impossible</span>
+                    </div>
+                </div>
+                
+                <button id="restartBtn">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('finalScore');
+        const highScoreElement = document.getElementById('highScore');
+
+        canvas.width = 400;
+        canvas.height = 600;
+
+        // Game variables (using closures to prevent external manipulation)
+        let gameState = (function() {
+            let _gameRunning = false;
+            let _score = 0;
+            let _frames = 0;
+            let _lastFrameTime = 0;
+            let _isVisible = true;
+            
+            return {
+                get gameRunning() { return _gameRunning; },
+                set gameRunning(val) { _gameRunning = !!val; },
+                get score() { return _score; },
+                incrementScore() { 
+                    _score++; 
+                    return _score;
+                },
+                resetScore() { _score = 0; },
+                getHighScore(difficulty) {
+                    return getHighScore(difficulty);
+                },
+                updateHighScore(difficulty, newScore) {
+                    const currentHigh = getHighScore(difficulty);
+                    if (newScore > currentHigh && newScore < 10000) { // Sanity check
+                        saveHighScore(difficulty, newScore);
+                    }
+                },
+                get frames() { return _frames; },
+                incrementFrames() { _frames++; },
+                resetFrames() { _frames = 0; },
+                get lastFrameTime() { return _lastFrameTime; },
+                set lastFrameTime(val) { _lastFrameTime = val; },
+                get isVisible() { return _isVisible; },
+                set isVisible(val) { _isVisible = val; }
+            };
+        })();
+        
+        let gameRunning = false;
+        let score = 0;
+        let highScore = gameState.getHighScore('medium');
+        let frames = 0;
+
+        // Device detection for information only
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+        
+        // Base speeds (will be multiplied by difficulty ONLY)
+        const baseGravity = 0.5;
+        const baseJump = -9;
+        const baseObstacleSpeed = 4;
+        const baseObstacleInterval = 80;
+        
+        // Current difficulty multiplier (default to Medium)
+        let difficultyMultiplier = 1.0;
+        let currentDifficulty = 'medium';
+        
+        // Load Kavi ship (16-bit style only)
+        const kaviShip = new Image();
+        let kaviShipLoaded = false;
+        kaviShip.src = 'data:image/png;base64,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';
+        kaviShip.onload = () => { kaviShipLoaded = true; };
+        
+        // Rocket - uses ONLY difficulty, identical on all devices
+        const rocket = {
+            x: 80,
+            y: canvas.height / 2,
+            width: 40,
+            height: 30,
+            velocity: 0,
+            gravity: baseGravity,
+            jump: baseJump,
+            rotation: 0
+        };
+
+        // Obstacles
+        const obstacles = [];
+        const obstacleWidth = 60;
+        const initialGap = 220;
+        const minGap = 140;
+        let obstacleSpeed = baseObstacleSpeed;
+        let obstacleInterval = baseObstacleInterval;
+        
+        // Function to get high score for current difficulty
+        function getHighScore(difficulty) {
+            return parseInt(localStorage.getItem(`rocketRushHighScore_${difficulty}`)) || 0;
+        }
+        
+        // Function to save high score for current difficulty
+        function saveHighScore(difficulty, score) {
+            localStorage.setItem(`rocketRushHighScore_${difficulty}`, score);
+        }
+        
+        // Function to update game speed based on difficulty
+        function updateDifficulty(difficulty) {
+            // Difficulty multipliers: Easy=0.7, Medium=1.0, Hard=1.4, Impossible=2.0
+            const difficultyMap = {
+                'easy': 0.7,
+                'medium': 1.0,
+                'hard': 1.4,
+                'impossible': 2.0
+            };
+            
+            currentDifficulty = difficulty;
+            difficultyMultiplier = difficultyMap[difficulty];
+            
+            // Everything uses the same difficulty multiplier
+            // Completely identical on mobile and desktop
+            rocket.gravity = baseGravity * difficultyMultiplier;
+            rocket.jump = baseJump * difficultyMultiplier;
+            obstacleSpeed = baseObstacleSpeed * difficultyMultiplier;
+            obstacleInterval = Math.floor(baseObstacleInterval / difficultyMultiplier);
+            
+            // Debug output
+            console.log('=== DIFFICULTY UPDATE ===');
+            console.log('Device:', isMobile ? 'MOBILE' : 'DESKTOP');
+            console.log('Difficulty:', difficulty, '(multiplier:', difficultyMultiplier + ')');
+            console.log('Rocket gravity:', rocket.gravity);
+            console.log('Rocket jump:', rocket.jump);
+            console.log('Obstacle speed:', obstacleSpeed);
+            console.log('Obstacle interval:', obstacleInterval);
+            console.log('All values should be IDENTICAL on mobile and desktop');
+            console.log('========================');
+        }
+        
+        // Initialize with medium difficulty
+        updateDifficulty('medium');
+        
+        // Function to get current gap based on score
+        function getCurrentGap() {
+            const gapReduction = Math.min(score * 2, initialGap - minGap);
+            return initialGap - gapReduction;
+        }
+
+        // Particles for effects
+        const particles = [];
+        
+        // Track visibility but don't auto-end game
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                gameState.isVisible = false;
+            } else {
+                gameState.isVisible = true;
+                gameState.lastFrameTime = performance.now();
+            }
+        });
+        
+        // Detect if user is trying to manipulate game speed
+        let frameTimeHistory = [];
+        function detectSpeedHack() {
+            const now = performance.now();
+            if (gameState.lastFrameTime > 0) {
+                const delta = now - gameState.lastFrameTime;
+                frameTimeHistory.push(delta);
+                if (frameTimeHistory.length > 60) {
+                    frameTimeHistory.shift();
+                }
+                
+                // Check for suspicious timing patterns
+                if (frameTimeHistory.length > 30) {
+                    const avgDelta = frameTimeHistory.reduce((a, b) => a + b) / frameTimeHistory.length;
+                    if (avgDelta < 10 || avgDelta > 100) { // Too fast or too slow
+                        return true;
+                    }
+                }
+            }
+            gameState.lastFrameTime = now;
+            return false;
+        }
+
+        // Create stars background
+        function createStars() {
+            const container = document.getElementById('gameContainer');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'stars';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function drawRocket() {
+            ctx.save();
+            ctx.translate(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+            
+            if (kaviShipLoaded) {
+                ctx.imageSmoothingEnabled = false;
+                const scale = 0.28;
+                const shipWidth = 128 * scale;
+                const shipHeight = 128 * scale;
+                
+                ctx.drawImage(kaviShip, -shipWidth / 2, -shipHeight / 2, shipWidth, shipHeight);
+                
+                // Pink flame
+                if (gameRunning) {
+                    const flameLength = 15 + Math.floor(Math.random() * 8);
+                    for (let i = 0; i < flameLength; i += 2) {
+                        const wobble = Math.floor((Math.random() - 0.5) * 8);
+                        const colors = ['#ff69b4', '#ff1493', '#ffc0cb'];
+                        const colorIndex = Math.floor((i / flameLength) * colors.length);
+                        ctx.fillStyle = colors[colorIndex] || colors[0];
+                        ctx.fillRect(-shipWidth/2 - i - 5, wobble, 2, 2);
+                    }
+                }
+            } else {
+                ctx.fillStyle = '#ff69b4';
+                ctx.fillRect(-15, -15, 30, 30);
+            }
+            ctx.restore();
+        }
+
+        
+        function drawUnityLogo(ctx, x, y, size) {
+            const p = 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.imageSmoothingEnabled = false;
+            
+            // Unity's signature dark gray/black color scheme with white accents
+            // Draw the iconic Unity cube with better shading
+            
+            // Main cube body (dark)
+            ctx.fillStyle = '#222222';
+            ctx.fillRect(-8*p, -6*p, 16*p, 12*p);
+            
+            // Left face (medium gray)
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(-8*p, -6*p, 6*p, 12*p);
+            
+            // Right face (lighter gray)
+            ctx.fillStyle = '#666666';
+            ctx.fillRect(2*p, -6*p, 6*p, 12*p);
+            
+            // Top face (lightest)
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(-6*p, -7*p, 12*p, 2*p);
+            
+            // White Unity "U" mark on front
+            ctx.fillStyle = '#ffffff';
+            // Left side of U
+            ctx.fillRect(-2*p, -3*p, p, 6*p);
+            // Bottom of U
+            ctx.fillRect(-2*p, 2*p, 4*p, p);
+            // Right side of U
+            ctx.fillRect(p, -3*p, p, 6*p);
+            
+            // Outline for definition
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-8*p, -6*p, 16*p, 12*p);
+            
+            ctx.restore();
+        }
+        
+        function drawCSharpLogo(ctx, x, y, size) {
+            const p = 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = '#68217a';
+            ctx.fillRect(-8*p, -8*p, 16*p, 16*p);
+            ctx.fillStyle = '#8b2d9f';
+            ctx.fillRect(-7*p, -7*p, 7*p, 14*p);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-5*p, -4*p, 2*p, 8*p);
+            ctx.fillRect(-3*p, -5*p, 3*p, 2*p);
+            ctx.fillRect(-3*p, 3*p, 3*p, 2*p);
+            ctx.fillRect(2*p, -4*p, p, 8*p);
+            ctx.fillRect(4*p, -4*p, p, 8*p);
+            ctx.fillRect(p, -2*p, 5*p, p);
+            ctx.fillRect(p, 2*p, 5*p, p);
+            ctx.restore();
+        }
+        
+        function drawAnimeChar(ctx, x, y, size) {
+            const p = 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = '#ffd5a3';
+            for (let dy = -6; dy < 6; dy++) {
+                for (let dx = -6; dx < 6; dx++) {
+                    if (Math.sqrt(dx*dx + dy*dy) < 5.5) {
+                        ctx.fillRect(dx*p, dy*p, p, p);
+                    }
+                }
+            }
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-7*p, -7*p, 14*p, 4*p);
+            ctx.fillRect(-7*p, -5*p, 3*p, 3*p);
+            ctx.fillRect(4*p, -5*p, 3*p, 3*p);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-5*p, -2*p, 3*p, 4*p);
+            ctx.fillRect(2*p, -2*p, 3*p, 4*p);
+            ctx.fillStyle = '#4a9eff';
+            ctx.fillRect(-4*p, -p, 2*p, 3*p);
+            ctx.fillRect(3*p, -p, 2*p, 3*p);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-4*p, -p, p, p);
+            ctx.fillRect(3*p, -p, p, p);
+            ctx.fillStyle = '#ff9999';
+            ctx.fillRect(-6*p, 2*p, 2*p, p);
+            ctx.fillRect(4*p, 2*p, 2*p, p);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-2*p, 4*p, p, p);
+            ctx.fillRect(-p, 5*p, 2*p, p);
+            ctx.fillRect(p, 4*p, p, p);
+            ctx.restore();
+        }
+        
+        function drawCat(ctx, x, y, size) {
+            const p = 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = '#ffaa66';
+            for (let dy = -5; dy < 5; dy++) {
+                for (let dx = -5; dx < 5; dx++) {
+                    if (Math.sqrt(dx*dx + dy*dy) < 4.5) {
+                        ctx.fillRect(dx*p, dy*p, p, p);
+                    }
+                }
+            }
+            ctx.fillStyle = '#ff8833';
+            ctx.fillRect(-6*p, -6*p, 3*p, 3*p);
+            ctx.fillRect(3*p, -6*p, 3*p, 3*p);
+            ctx.fillStyle = '#ff66aa';
+            ctx.fillRect(-5*p, -5*p, p, 2*p);
+            ctx.fillRect(4*p, -5*p, p, 2*p);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-4*p, -2*p, 2*p, 3*p);
+            ctx.fillRect(2*p, -2*p, 2*p, 3*p);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-3*p, -p, p, p);
+            ctx.fillRect(3*p, -p, p, p);
+            ctx.fillStyle = '#ff69b4';
+            ctx.fillRect(0, p, p, p);
+            ctx.fillRect(-p, 2*p, 3*p, p);
+            ctx.fillStyle = '#666';
+            for (let i = 0; i < 3; i++) {
+                ctx.fillRect(-7*p, p + i*p, 2*p, p);
+                ctx.fillRect(5*p, p + i*p, 2*p, p);
+            }
+            ctx.restore();
+        }
+        
+        function drawDog(ctx, x, y, size) {
+            const p = 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = '#a0522d';
+            ctx.fillRect(-6*p, -4*p, 12*p, 8*p);
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-5*p, -3*p, 5*p, 6*p);
+            ctx.fillStyle = '#704214';
+            ctx.fillRect(-8*p, -3*p, 3*p, 6*p);
+            ctx.fillRect(5*p, -3*p, 3*p, 6*p);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-4*p, -2*p, 2*p, 3*p);
+            ctx.fillRect(2*p, -2*p, 2*p, 3*p);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-3*p, -p, p, p);
+            ctx.fillRect(3*p, -p, p, p);
+            ctx.fillStyle = '#d2b48c';
+            ctx.fillRect(-3*p, 2*p, 6*p, 3*p);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-2*p, 2*p, 4*p, 2*p);
+            ctx.fillStyle = '#ff69b4';
+            ctx.fillRect(-p, 5*p, 2*p, 2*p);
+            ctx.restore();
+        }
+        
+        function drawAsteroid(x, y, radius, seedOffset, type) {
+            // Call the appropriate drawing function based on type
+            if (type === 'unity') {
+                drawUnityLogo(ctx, x, y, radius);
+            } else if (type === 'csharp') {
+                drawCSharpLogo(ctx, x, y, radius);
+            } else if (type === 'anime') {
+                drawAnimeChar(ctx, x, y, radius);
+            } else if (type === 'cat') {
+                drawCat(ctx, x, y, radius);
+            } else if (type === 'dog') {
+                drawDog(ctx, x, y, radius);
+            } else {
+                // Fallback - draw a simple circle
+                ctx.save();
+                ctx.fillStyle = '#ff69b4';
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function drawObstacle(obstacle) {
+            const centerX = obstacle.x + obstacleWidth / 2;
+            
+            // Draw multiple asteroids in top and bottom sections
+            const asteroidSize = obstacleWidth / 1.8;
+            const spacing = asteroidSize * 1.5;
+            const gapClearance = asteroidSize * 0.2; // Reduced clearance for even tighter gameplay
+            
+            // Top section - work backwards from the gap boundary to ensure coverage
+            const topSafeZone = obstacle.topHeight - gapClearance;
+            let topY = topSafeZone - asteroidSize / 2;
+            let asteroidIndex = 0;
+            
+            // Draw from bottom of top section upward
+            while (topY > asteroidSize / 2) {
+                drawAsteroid(centerX, topY, asteroidSize, asteroidIndex * 100, obstacle.type);
+                topY -= spacing;
+                asteroidIndex++;
+            }
+            
+            // Bottom section - work forward from the gap boundary
+            const bottomSafeZone = obstacle.topHeight + obstacle.gap + gapClearance;
+            let bottomY = bottomSafeZone + asteroidSize / 2;
+            asteroidIndex = 0;
+            
+            // Draw from top of bottom section downward
+            while (bottomY < canvas.height - asteroidSize / 2) {
+                drawAsteroid(centerX, bottomY, asteroidSize, 1000 + asteroidIndex * 100, obstacle.type);
+                bottomY += spacing;
+                asteroidIndex++;
+            }
+        }
+
+        function createObstacle() {
+            const currentGap = getCurrentGap();
+            const minHeight = 50;
+            const maxHeight = canvas.height - currentGap - 50;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            const types = ['unity', 'csharp', 'anime', 'cat', 'dog'];
+            const obstacleType = types[Math.floor(Math.random() * types.length)];
+            
+            obstacles.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                gap: currentGap,
+                scored: false,
+                seed: Math.random(), // For consistent asteroid appearance
+                type: obstacleType
+            });
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 30,
+                    color: `hsl(${Math.random() * 60 + 15}, 100%, 50%)`
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life / 30;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function checkCollision() {
+            // The rocket center point
+            const rocketCenterX = rocket.x + rocket.width / 2;
+            const rocketCenterY = rocket.y + rocket.height / 2;
+            
+            // Use a very forgiving circular hitbox at the center
+            const hitboxRadius = 8;
+            
+            // Check ground and ceiling
+            if (rocketCenterY - hitboxRadius < 5 || rocketCenterY + hitboxRadius > canvas.height - 5) {
+                return true;
+            }
+
+            // Check obstacles
+            for (let obstacle of obstacles) {
+                // Check if rocket is horizontally overlapping the obstacle
+                if (rocketCenterX + hitboxRadius > obstacle.x && 
+                    rocketCenterX - hitboxRadius < obstacle.x + obstacleWidth) {
+                    
+                    // Account for the gap clearance used when drawing asteroids
+                    const asteroidSize = obstacleWidth / 1.8;
+                    const gapClearance = asteroidSize * 0.2; // Match the drawing clearance
+                    
+                    // The actual safe zone
+                    const safeZoneTop = obstacle.topHeight - gapClearance;
+                    const safeZoneBottom = obstacle.topHeight + obstacle.gap + gapClearance;
+                    
+                    // Collision if rocket hitbox is outside the safe zone
+                    if (rocketCenterY - hitboxRadius < safeZoneTop || 
+                        rocketCenterY + hitboxRadius > safeZoneBottom) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function update() {
+            if (!gameState.gameRunning) return;
+
+            // Frame counter increments by 1 each frame
+            gameState.incrementFrames();
+            frames = gameState.frames;
+
+            // Update rocket physics
+            rocket.velocity += rocket.gravity;
+            rocket.y += rocket.velocity;
+
+            // Create obstacles based on frame counter
+            if (frames % obstacleInterval === 0) {
+                createObstacle();
+            }
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= obstacleSpeed;
+
+                // Score point (using secure increment)
+                if (!obstacles[i].scored && obstacles[i].x + obstacleWidth < rocket.x) {
+                    obstacles[i].scored = true;
+                    score = gameState.incrementScore();
+                    scoreElement.textContent = score;
+                }
+
+                // Remove off-screen obstacles
+                if (obstacles[i].x + obstacleWidth < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Check collision
+            if (checkCollision()) {
+                gameOver();
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#1a0a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw obstacles
+            for (let obstacle of obstacles) {
+                drawObstacle(obstacle);
+            }
+
+            // Draw particles
+            updateParticles();
+
+            // Draw rocket
+            drawRocket();
+        }
+
+        function gameLoop(timestamp) {
+            requestAnimationFrame(gameLoop);
+            
+            if (!gameLoop.lastTime) gameLoop.lastTime = timestamp;
+            const deltaTime = timestamp - gameLoop.lastTime;
+            gameLoop.lastTime = timestamp;
+            
+            // Accumulate time
+            gameLoop.accumulator = (gameLoop.accumulator || 0) + deltaTime;
+            
+            // Fixed time step (16.67ms = 60 FPS)
+            const fixedTimeStep = 1000 / 60;
+            
+            // Update in fixed time steps
+            while (gameLoop.accumulator >= fixedTimeStep) {
+                update();
+                gameLoop.accumulator -= fixedTimeStep;
+            }
+            
+            draw();
+        }
+
+        function startGame() {
+            gameState.gameRunning = true;
+            gameRunning = true;
+            gameState.resetScore();
+            score = 0;
+            gameState.resetFrames();
+            frames = 0;
+            frameTimeHistory = [];
+            gameState.lastFrameTime = performance.now();
+            
+            // Reset game loop timing
+            gameLoop.lastTime = null;
+            gameLoop.accumulator = 0;
+            
+            obstacles.length = 0;
+            particles.length = 0;
+            rocket.y = canvas.height / 2;
+            rocket.velocity = 0;
+            
+            // Load high score for current difficulty
+            highScore = gameState.getHighScore(currentDifficulty);
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            scoreElement.textContent = score;
+        }
+
+        function gameOver() {
+            gameState.gameRunning = false;
+            gameRunning = false;
+            createParticles(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+            
+            // Validate score before saving (prevent manipulation)
+            const finalScore = gameState.score;
+            if (finalScore === score && finalScore >= 0) {
+                gameState.updateHighScore(currentDifficulty, finalScore);
+                highScore = gameState.getHighScore(currentDifficulty);
+            }
+            
+            finalScoreElement.textContent = `Score: ${finalScore}`;
+            highScoreElement.textContent = `Best (${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)}): ${highScore}`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function jump() {
+            if (gameState.gameRunning) {
+                rocket.velocity = rocket.jump;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        // Difficulty slider handlers
+        const difficultyNames = ['easy', 'medium', 'hard', 'impossible'];
+        const difficultyLabels = ['Easy', 'Medium', 'Hard', 'Impossible'];
+        
+        const slider1 = document.getElementById('difficultySlider');
+        const slider2 = document.getElementById('difficultySlider2');
+        const label1 = document.getElementById('difficultyLabel');
+        const label2 = document.getElementById('difficultyLabel2');
+        
+        function syncSliders(value) {
+            slider1.value = value;
+            slider2.value = value;
+            label1.textContent = difficultyLabels[value];
+            label2.textContent = difficultyLabels[value];
+            updateDifficulty(difficultyNames[value]);
+        }
+        
+        slider1.addEventListener('input', (e) => syncSliders(e.target.value));
+        slider2.addEventListener('input', (e) => syncSliders(e.target.value));
+
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!gameRunning && startScreen.style.display === 'none') {
+                    startGame();
+                } else {
+                    jump();
+                }
+            }
+        });
+        
+        // Prevent right-click to discourage inspect element
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Detect DevTools and warn about cheating
+        const devtoolsDetector = setInterval(() => {
+            const widthThreshold = window.outerWidth - window.innerWidth > 160;
+            const heightThreshold = window.outerHeight - window.innerHeight > 160;
+            if (widthThreshold || heightThreshold) {
+                if (gameState.gameRunning) {
+                    console.warn('🚫 DevTools detected - Play fair!');
+                }
+            }
+        }, 1000);
+        
+        // Warn users about console manipulation
+        console.log('%c🎮 KAVI KROSSING', 'font-size: 24px; font-weight: bold; color: #667eea;');
+        console.log('%c⚠️ WARNING', 'font-size: 18px; font-weight: bold; color: #e74c3c;');
+        console.log('%cManipulating game variables via console will result in invalid scores.', 'font-size: 14px;');
+        console.log('%cPlay fair and earn your high score legitimately!', 'font-size: 14px; color: #2ecc71;');
+
+        // Initialize
+        createStars();
+        gameLoop();
+    </script>
+</body>
+</html>
