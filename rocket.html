@@ -1,0 +1,961 @@
+---
+permalink: /rocket
+layout: page
+title: Rocket Rush
+hide_header: true
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Rush - Space Adventure</title>
+    <style>
+        #gameContainer * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #0d1128 0%, #1a1a3e 100%);
+            border: 3px solid #4a4a8a;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(74, 74, 138, 0.5);
+            margin: 20px auto;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .stars {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            pointer-events: all;
+        }
+
+        #gameContainer h1 {
+            font-size: 42px;
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(255, 100, 100, 0.8);
+        }
+
+        #gameContainer .subtitle {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        #gameContainer button {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            pointer-events: all;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #gameContainer button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #gameContainer button:active {
+            transform: translateY(0);
+        }
+
+        #finalScore {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        #highScore {
+            font-size: 18px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+
+        .instruction {
+            font-size: 16px;
+            color: #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div id="score">0</div>
+            
+            <div id="startScreen">
+                <h1>🚀 ROCKET RUSH</h1>
+                <p class="subtitle">Navigate through the asteroid field!</p>
+                
+                <div style="margin: 20px 0; width: 300px;">
+                    <label for="difficultySlider" style="color: #fff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Difficulty: <span id="difficultyLabel">Medium</span>
+                    </label>
+                    <input type="range" id="difficultySlider" min="0" max="3" value="1" 
+                           style="width: 100%; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; color: #aaa; font-size: 12px; margin-top: 5px;">
+                        <span>Easy</span>
+                        <span>Medium</span>
+                        <span>Hard</span>
+                        <span>Impossible</span>
+                    </div>
+                </div>
+                
+                <button id="startBtn">START GAME</button>
+                <p class="instruction">Tap, click, or press SPACE to fly</p>
+            </div>
+            
+            <div id="gameOverScreen" style="display: none;">
+                <h1>GAME OVER</h1>
+                <p id="finalScore">Score: 0</p>
+                <p id="highScore">Best: 0</p>
+                
+                <div style="margin: 20px 0; width: 300px;">
+                    <label for="difficultySlider2" style="color: #fff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Difficulty: <span id="difficultyLabel2">Medium</span>
+                    </label>
+                    <input type="range" id="difficultySlider2" min="0" max="3" value="1" 
+                           style="width: 100%; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; color: #aaa; font-size: 12px; margin-top: 5px;">
+                        <span>Easy</span>
+                        <span>Medium</span>
+                        <span>Hard</span>
+                        <span>Impossible</span>
+                    </div>
+                </div>
+                
+                <button id="restartBtn">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('finalScore');
+        const highScoreElement = document.getElementById('highScore');
+
+        canvas.width = 400;
+        canvas.height = 600;
+
+        // Game variables (using closures to prevent external manipulation)
+        let gameState = (function() {
+            let _gameRunning = false;
+            let _score = 0;
+            let _frames = 0;
+            let _lastFrameTime = 0;
+            let _isVisible = true;
+            
+            return {
+                get gameRunning() { return _gameRunning; },
+                set gameRunning(val) { _gameRunning = !!val; },
+                get score() { return _score; },
+                incrementScore() { 
+                    _score++; 
+                    return _score;
+                },
+                resetScore() { _score = 0; },
+                getHighScore(difficulty) {
+                    return getHighScore(difficulty);
+                },
+                updateHighScore(difficulty, newScore) {
+                    const currentHigh = getHighScore(difficulty);
+                    if (newScore > currentHigh && newScore < 10000) { // Sanity check
+                        saveHighScore(difficulty, newScore);
+                    }
+                },
+                get frames() { return _frames; },
+                incrementFrames() { _frames++; },
+                resetFrames() { _frames = 0; },
+                get lastFrameTime() { return _lastFrameTime; },
+                set lastFrameTime(val) { _lastFrameTime = val; },
+                get isVisible() { return _isVisible; },
+                set isVisible(val) { _isVisible = val; }
+            };
+        })();
+        
+        let gameRunning = false;
+        let score = 0;
+        let highScore = gameState.getHighScore('medium');
+        let frames = 0;
+
+        // Device detection for information only
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+        
+        // Base speeds (will be multiplied by difficulty ONLY)
+        const baseGravity = 0.5;
+        const baseJump = -9;
+        const baseObstacleSpeed = 4;
+        const baseObstacleInterval = 90;
+        
+        // Current difficulty multiplier (default to Medium)
+        let difficultyMultiplier = 1.0;
+        let currentDifficulty = 'medium';
+        
+        // Rocket - uses ONLY difficulty, identical on all devices
+        const rocket = {
+            x: 80,
+            y: canvas.height / 2,
+            width: 40,
+            height: 30,
+            velocity: 0,
+            gravity: baseGravity,
+            jump: baseJump,
+            rotation: 0
+        };
+
+        // Obstacles
+        const obstacles = [];
+        const obstacleWidth = 60;
+        const initialGap = 220;
+        const minGap = 140;
+        let obstacleSpeed = baseObstacleSpeed;
+        let obstacleInterval = baseObstacleInterval;
+        
+        // Function to get high score for current difficulty
+        function getHighScore(difficulty) {
+            return parseInt(localStorage.getItem(`rocketRushHighScore_${difficulty}`)) || 0;
+        }
+        
+        // Function to save high score for current difficulty
+        function saveHighScore(difficulty, score) {
+            localStorage.setItem(`rocketRushHighScore_${difficulty}`, score);
+        }
+        
+        // Function to update game speed based on difficulty
+        function updateDifficulty(difficulty) {
+            // Difficulty multipliers: Easy=0.7, Medium=1.0, Hard=1.4, Impossible=2.0
+            const difficultyMap = {
+                'easy': 0.7,
+                'medium': 1.0,
+                'hard': 1.4,
+                'impossible': 2.0
+            };
+            
+            currentDifficulty = difficulty;
+            difficultyMultiplier = difficultyMap[difficulty];
+            
+            // Everything uses the same difficulty multiplier
+            // Completely identical on mobile and desktop
+            rocket.gravity = baseGravity * difficultyMultiplier;
+            rocket.jump = baseJump * difficultyMultiplier;
+            obstacleSpeed = baseObstacleSpeed * difficultyMultiplier;
+            obstacleInterval = Math.floor(baseObstacleInterval / difficultyMultiplier);
+            
+            // Debug output
+            console.log('=== DIFFICULTY UPDATE ===');
+            console.log('Device:', isMobile ? 'MOBILE' : 'DESKTOP');
+            console.log('Difficulty:', difficulty, '(multiplier:', difficultyMultiplier + ')');
+            console.log('Rocket gravity:', rocket.gravity);
+            console.log('Rocket jump:', rocket.jump);
+            console.log('Obstacle speed:', obstacleSpeed);
+            console.log('Obstacle interval:', obstacleInterval);
+            console.log('All values should be IDENTICAL on mobile and desktop');
+            console.log('========================');
+        }
+        
+        // Initialize with medium difficulty
+        updateDifficulty('medium');
+        
+        // Function to get current gap based on score
+        function getCurrentGap() {
+            const gapReduction = Math.min(score * 2, initialGap - minGap);
+            return initialGap - gapReduction;
+        }
+
+        // Particles for effects
+        const particles = [];
+        
+        // Track visibility but don't auto-end game
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                gameState.isVisible = false;
+            } else {
+                gameState.isVisible = true;
+                gameState.lastFrameTime = performance.now();
+            }
+        });
+        
+        // Detect if user is trying to manipulate game speed
+        let frameTimeHistory = [];
+        function detectSpeedHack() {
+            const now = performance.now();
+            if (gameState.lastFrameTime > 0) {
+                const delta = now - gameState.lastFrameTime;
+                frameTimeHistory.push(delta);
+                if (frameTimeHistory.length > 60) {
+                    frameTimeHistory.shift();
+                }
+                
+                // Check for suspicious timing patterns
+                if (frameTimeHistory.length > 30) {
+                    const avgDelta = frameTimeHistory.reduce((a, b) => a + b) / frameTimeHistory.length;
+                    if (avgDelta < 10 || avgDelta > 100) { // Too fast or too slow
+                        return true;
+                    }
+                }
+            }
+            gameState.lastFrameTime = now;
+            return false;
+        }
+
+        // Create stars background
+        function createStars() {
+            const container = document.getElementById('gameContainer');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'stars';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function drawRocket() {
+            ctx.save();
+            ctx.translate(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+            
+            // Rotate based on velocity
+            rocket.rotation = Math.min(Math.max(rocket.velocity * 3, -30), 30) * Math.PI / 180;
+            ctx.rotate(rocket.rotation);
+
+            // Rocket body - main fuselage with metallic gradient
+            const bodyGradient = ctx.createLinearGradient(-5, -15, 5, 15);
+            bodyGradient.addColorStop(0, '#c0392b');
+            bodyGradient.addColorStop(0.3, '#e74c3c');
+            bodyGradient.addColorStop(0.6, '#c0392b');
+            bodyGradient.addColorStop(1, '#a93226');
+            
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(15, -10);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(15, 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Body outline/shadow
+            ctx.strokeStyle = '#7b241c';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Cockpit window with reflection
+            const windowGradient = ctx.createRadialGradient(3, -2, 1, 5, 0, 7);
+            windowGradient.addColorStop(0, '#5dade2');
+            windowGradient.addColorStop(0.5, '#3498db');
+            windowGradient.addColorStop(1, '#2874a6');
+            
+            ctx.fillStyle = windowGradient;
+            ctx.beginPath();
+            ctx.arc(5, 0, 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Window highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(3, -2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Window frame
+            ctx.strokeStyle = '#1a5276';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(5, 0, 7, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Top fin with shading
+            ctx.fillStyle = '#a93226';
+            ctx.beginPath();
+            ctx.moveTo(-15, -10);
+            ctx.lineTo(-20, -16);
+            ctx.lineTo(-10, -10);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = '#7b241c';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Top fin highlight
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(-15, -10);
+            ctx.lineTo(-17, -13);
+            ctx.lineTo(-12, -10);
+            ctx.closePath();
+            ctx.fill();
+
+            // Bottom fin with shading
+            ctx.fillStyle = '#a93226';
+            ctx.beginPath();
+            ctx.moveTo(-15, 10);
+            ctx.lineTo(-20, 16);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = '#7b241c';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Bottom fin highlight
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(-15, 10);
+            ctx.lineTo(-17, 13);
+            ctx.lineTo(-12, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // Exhaust flame (animated) - more realistic with multiple layers
+            if (gameRunning) {
+                const flameLength = 18 + Math.random() * 12;
+                const flameWobble = (Math.random() - 0.5) * 4;
+                
+                // Outer flame (orange)
+                ctx.fillStyle = '#e67e22';
+                ctx.beginPath();
+                ctx.moveTo(-20, -8);
+                ctx.lineTo(-20 - flameLength, flameWobble);
+                ctx.lineTo(-20, 8);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Middle flame (yellow-orange)
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.moveTo(-20, -5);
+                ctx.lineTo(-20 - flameLength * 0.7, flameWobble * 0.7);
+                ctx.lineTo(-20, 5);
+                ctx.closePath();
+                ctx.fill();
+
+                // Inner flame (bright yellow-white)
+                ctx.fillStyle = '#f9e79f';
+                ctx.beginPath();
+                ctx.moveTo(-20, -3);
+                ctx.lineTo(-20 - flameLength * 0.4, flameWobble * 0.5);
+                ctx.lineTo(-20, 3);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Nose cone detail
+            ctx.fillStyle = '#7b241c';
+            ctx.beginPath();
+            ctx.moveTo(15, -10);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(15, 10);
+            ctx.lineTo(17, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawObstacle(obstacle) {
+            const centerX = obstacle.x + obstacleWidth / 2;
+            
+            // Seeded random function for consistent asteroid shapes
+            function seededRandom(seed) {
+                const x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            }
+            
+            // Function to draw a realistic asteroid
+            function drawAsteroid(x, y, radius, seedOffset) {
+                ctx.save();
+                ctx.translate(x, y);
+                
+                // Create more realistic irregular asteroid shape
+                const points = 16; // More points for more detail
+                const vertices = [];
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const seed = obstacle.seed + seedOffset + i * 0.1;
+                    // More variance for more realistic irregular shapes (0.7-1.0 range)
+                    const variance = 0.7 + seededRandom(seed) * 0.3;
+                    const r = radius * variance;
+                    vertices.push({
+                        x: Math.cos(angle) * r,
+                        y: Math.sin(angle) * r
+                    });
+                }
+                
+                // Draw main asteroid body with better gradient
+                const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius * 1.2);
+                gradient.addColorStop(0, '#b0b0b0');
+                gradient.addColorStop(0.4, '#888888');
+                gradient.addColorStop(0.7, '#606060');
+                gradient.addColorStop(1, '#3a3a3a');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let i = 1; i < vertices.length; i++) {
+                    ctx.lineTo(vertices[i].x, vertices[i].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Add darker edge/shadow
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Add more prominent surface texture - rocky details
+                ctx.fillStyle = 'rgba(70, 70, 70, 0.7)';
+                for (let i = 0; i < 18; i++) {
+                    const seed1 = obstacle.seed + seedOffset + i * 0.5;
+                    const seed2 = obstacle.seed + seedOffset + i * 0.5 + 0.25;
+                    const angle = seededRandom(seed1) * Math.PI * 2;
+                    const dist = seededRandom(seed2) * radius * 0.75;
+                    const size = 2 + seededRandom(seed1 + seed2) * 5;
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.cos(angle) * dist,
+                        Math.sin(angle) * dist,
+                        size,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                // Add varied craters with depth
+                const craterCount = 5 + Math.floor(seededRandom(obstacle.seed + seedOffset) * 3);
+                for (let i = 0; i < craterCount; i++) {
+                    const seed1 = obstacle.seed + seedOffset + 100 + i;
+                    const seed2 = obstacle.seed + seedOffset + 200 + i;
+                    const angle = seededRandom(seed1) * Math.PI * 2;
+                    const dist = seededRandom(seed2) * radius * 0.6;
+                    const craterX = Math.cos(angle) * dist;
+                    const craterY = Math.sin(angle) * dist;
+                    const craterSize = 4 + seededRandom(seed1 + seed2) * 8;
+                    
+                    // Crater shadow/depth
+                    const craterGradient = ctx.createRadialGradient(
+                        craterX, craterY, 0,
+                        craterX, craterY, craterSize
+                    );
+                    craterGradient.addColorStop(0, '#2a2a2a');
+                    craterGradient.addColorStop(0.6, '#5a5a5a');
+                    craterGradient.addColorStop(1, 'rgba(90, 90, 90, 0)');
+                    
+                    ctx.fillStyle = craterGradient;
+                    ctx.beginPath();
+                    ctx.arc(craterX, craterY, craterSize, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Crater rim highlight
+                    ctx.strokeStyle = 'rgba(160, 160, 160, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(craterX - craterSize * 0.2, craterY - craterSize * 0.2, craterSize * 0.8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Add some brighter highlights for realism
+                ctx.fillStyle = 'rgba(200, 200, 200, 0.3)';
+                for (let i = 0; i < 8; i++) {
+                    const seed1 = obstacle.seed + seedOffset + 300 + i;
+                    const seed2 = obstacle.seed + seedOffset + 400 + i;
+                    const angle = seededRandom(seed1) * Math.PI * 2;
+                    const dist = seededRandom(seed2) * radius * 0.5;
+                    const size = 1 + seededRandom(seed1 + seed2) * 3;
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.cos(angle) * dist - radius * 0.2,
+                        Math.sin(angle) * dist - radius * 0.2,
+                        size,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            
+            // Draw multiple asteroids in top and bottom sections
+            const asteroidSize = obstacleWidth / 1.8;
+            const spacing = asteroidSize * 1.5;
+            const gapClearance = asteroidSize * 0.2; // Reduced clearance for even tighter gameplay
+            
+            // Top section - work backwards from the gap boundary to ensure coverage
+            const topSafeZone = obstacle.topHeight - gapClearance;
+            let topY = topSafeZone - asteroidSize / 2;
+            let asteroidIndex = 0;
+            
+            // Draw from bottom of top section upward
+            while (topY > asteroidSize / 2) {
+                drawAsteroid(centerX, topY, asteroidSize, asteroidIndex * 100);
+                topY -= spacing;
+                asteroidIndex++;
+            }
+            
+            // Bottom section - work forward from the gap boundary
+            const bottomSafeZone = obstacle.topHeight + obstacle.gap + gapClearance;
+            let bottomY = bottomSafeZone + asteroidSize / 2;
+            asteroidIndex = 0;
+            
+            // Draw from top of bottom section downward
+            while (bottomY < canvas.height - asteroidSize / 2) {
+                drawAsteroid(centerX, bottomY, asteroidSize, 1000 + asteroidIndex * 100);
+                bottomY += spacing;
+                asteroidIndex++;
+            }
+        }
+
+        function createObstacle() {
+            const currentGap = getCurrentGap();
+            const minHeight = 50;
+            const maxHeight = canvas.height - currentGap - 50;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            obstacles.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                gap: currentGap,
+                scored: false,
+                seed: Math.random() // For consistent asteroid appearance
+            });
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 30,
+                    color: `hsl(${Math.random() * 60 + 15}, 100%, 50%)`
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life / 30;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function checkCollision() {
+            // The rocket center point
+            const rocketCenterX = rocket.x + rocket.width / 2;
+            const rocketCenterY = rocket.y + rocket.height / 2;
+            
+            // Use a very forgiving circular hitbox at the center
+            const hitboxRadius = 8;
+            
+            // Check ground and ceiling
+            if (rocketCenterY - hitboxRadius < 5 || rocketCenterY + hitboxRadius > canvas.height - 5) {
+                return true;
+            }
+
+            // Check obstacles
+            for (let obstacle of obstacles) {
+                // Check if rocket is horizontally overlapping the obstacle
+                if (rocketCenterX + hitboxRadius > obstacle.x && 
+                    rocketCenterX - hitboxRadius < obstacle.x + obstacleWidth) {
+                    
+                    // Account for the gap clearance used when drawing asteroids
+                    const asteroidSize = obstacleWidth / 1.8;
+                    const gapClearance = asteroidSize * 0.2; // Match the drawing clearance
+                    
+                    // The actual safe zone
+                    const safeZoneTop = obstacle.topHeight - gapClearance;
+                    const safeZoneBottom = obstacle.topHeight + obstacle.gap + gapClearance;
+                    
+                    // Collision if rocket hitbox is outside the safe zone
+                    if (rocketCenterY - hitboxRadius < safeZoneTop || 
+                        rocketCenterY + hitboxRadius > safeZoneBottom) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function update() {
+            if (!gameState.gameRunning) return;
+
+            // Frame counter increments by 1 each frame
+            gameState.incrementFrames();
+            frames = gameState.frames;
+
+            // Update rocket physics
+            rocket.velocity += rocket.gravity;
+            rocket.y += rocket.velocity;
+
+            // Create obstacles based on frame counter
+            if (frames % obstacleInterval === 0) {
+                createObstacle();
+            }
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= obstacleSpeed;
+
+                // Score point (using secure increment)
+                if (!obstacles[i].scored && obstacles[i].x + obstacleWidth < rocket.x) {
+                    obstacles[i].scored = true;
+                    score = gameState.incrementScore();
+                    scoreElement.textContent = score;
+                }
+
+                // Remove off-screen obstacles
+                if (obstacles[i].x + obstacleWidth < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Check collision
+            if (checkCollision()) {
+                gameOver();
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#0d1128';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw obstacles
+            for (let obstacle of obstacles) {
+                drawObstacle(obstacle);
+            }
+
+            // Draw particles
+            updateParticles();
+
+            // Draw rocket
+            drawRocket();
+        }
+
+        function gameLoop(timestamp) {
+            requestAnimationFrame(gameLoop);
+            
+            if (!gameLoop.lastTime) gameLoop.lastTime = timestamp;
+            const deltaTime = timestamp - gameLoop.lastTime;
+            gameLoop.lastTime = timestamp;
+            
+            // Accumulate time
+            gameLoop.accumulator = (gameLoop.accumulator || 0) + deltaTime;
+            
+            // Fixed time step (16.67ms = 60 FPS)
+            const fixedTimeStep = 1000 / 60;
+            
+            // Update in fixed time steps
+            while (gameLoop.accumulator >= fixedTimeStep) {
+                update();
+                gameLoop.accumulator -= fixedTimeStep;
+            }
+            
+            draw();
+        }
+
+        function startGame() {
+            gameState.gameRunning = true;
+            gameRunning = true;
+            gameState.resetScore();
+            score = 0;
+            gameState.resetFrames();
+            frames = 0;
+            frameTimeHistory = [];
+            gameState.lastFrameTime = performance.now();
+            
+            // Reset game loop timing
+            gameLoop.lastTime = null;
+            gameLoop.accumulator = 0;
+            
+            obstacles.length = 0;
+            particles.length = 0;
+            rocket.y = canvas.height / 2;
+            rocket.velocity = 0;
+            
+            // Load high score for current difficulty
+            highScore = gameState.getHighScore(currentDifficulty);
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            scoreElement.textContent = score;
+        }
+
+        function gameOver() {
+            gameState.gameRunning = false;
+            gameRunning = false;
+            createParticles(rocket.x + rocket.width / 2, rocket.y + rocket.height / 2);
+            
+            // Validate score before saving (prevent manipulation)
+            const finalScore = gameState.score;
+            if (finalScore === score && finalScore >= 0) {
+                gameState.updateHighScore(currentDifficulty, finalScore);
+                highScore = gameState.getHighScore(currentDifficulty);
+            }
+            
+            finalScoreElement.textContent = `Score: ${finalScore}`;
+            highScoreElement.textContent = `Best (${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)}): ${highScore}`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function jump() {
+            if (gameState.gameRunning) {
+                rocket.velocity = rocket.jump;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        // Difficulty slider handlers
+        const difficultyNames = ['easy', 'medium', 'hard', 'impossible'];
+        const difficultyLabels = ['Easy', 'Medium', 'Hard', 'Impossible'];
+        
+        const slider1 = document.getElementById('difficultySlider');
+        const slider2 = document.getElementById('difficultySlider2');
+        const label1 = document.getElementById('difficultyLabel');
+        const label2 = document.getElementById('difficultyLabel2');
+        
+        function syncSliders(value) {
+            slider1.value = value;
+            slider2.value = value;
+            label1.textContent = difficultyLabels[value];
+            label2.textContent = difficultyLabels[value];
+            updateDifficulty(difficultyNames[value]);
+        }
+        
+        slider1.addEventListener('input', (e) => syncSliders(e.target.value));
+        slider2.addEventListener('input', (e) => syncSliders(e.target.value));
+
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!gameRunning && startScreen.style.display === 'none') {
+                    startGame();
+                } else {
+                    jump();
+                }
+            }
+        });
+        
+        // Prevent right-click to discourage inspect element
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Detect DevTools and warn about cheating
+        const devtoolsDetector = setInterval(() => {
+            const widthThreshold = window.outerWidth - window.innerWidth > 160;
+            const heightThreshold = window.outerHeight - window.innerHeight > 160;
+            if (widthThreshold || heightThreshold) {
+                if (gameState.gameRunning) {
+                    console.warn('🚫 DevTools detected - Play fair!');
+                }
+            }
+        }, 1000);
+        
+        // Warn users about console manipulation
+        console.log('%c🚀 ROCKET RUSH', 'font-size: 24px; font-weight: bold; color: #667eea;');
+        console.log('%c⚠️ WARNING', 'font-size: 18px; font-weight: bold; color: #e74c3c;');
+        console.log('%cManipulating game variables via console will result in invalid scores.', 'font-size: 14px;');
+        console.log('%cPlay fair and earn your high score legitimately!', 'font-size: 14px; color: #2ecc71;');
+
+        // Initialize
+        createStars();
+        gameLoop();
+    </script>
+</body>
+</html>
